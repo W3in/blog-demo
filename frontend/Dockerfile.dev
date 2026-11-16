@@ -1,0 +1,17 @@
+# Development image for the Nuxt frontend (used by docker-compose.yml).
+# Node lives in the image, so no local Node install is needed.
+FROM node:22-slim
+
+# Run as the image's `node` user (id 1000) so files created by `nuxi`
+# belong to you on the host, not root. node_modules is pre-created so its
+# volume starts out owned by that user.
+RUN mkdir -p /app/node_modules && chown -R node:node /app
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+USER node
+WORKDIR /app
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]

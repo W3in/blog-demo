@@ -1,0 +1,25 @@
+# Development image for the Rails API (used by docker-compose.yml).
+# `Dockerfile` next to this one is the production image Rails generated; keep it for deploy (stage 8).
+FROM ruby:3.3-slim
+
+RUN apt-get update -qq \
+ && apt-get install -y --no-install-recommends build-essential libpq-dev libyaml-dev git curl \
+ && rm -rf /var/lib/apt/lists/*
+
+# Run as a normal user with the same id as you on the host,
+# so files created by `rails generate` belong to you, not root.
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -o -g "$GID" app && useradd -o -m -u "$UID" -g "$GID" app
+
+# Lets you run `rails new` inside the container before the app exists.
+RUN gem install rails && chown -R app:app /usr/local/bundle
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+USER app
+WORKDIR /app
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]
